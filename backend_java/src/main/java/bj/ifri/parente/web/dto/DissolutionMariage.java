@@ -1,0 +1,10 @@
+package bj.ifri.parente.web.dto;
+
+import bj.ifri.parente.web.validation.DateIso;
+import jakarta.validation.constraints.Pattern;
+
+/** PATCH /api/mariages/{id} : dissolution (date de fin et cause, qui vont ensemble). */
+public record DissolutionMariage(
+        @DateIso(message = "La date de fin doit être une date valide (AAAA-MM-JJ).") String dateFin,
+        @Pattern(regexp = "deces|divorce", message = "La cause de dissolution doit valoir deces ou divorce.") String causeDissolution) {
+}
