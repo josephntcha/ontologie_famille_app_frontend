@@ -1,0 +1,119 @@
+<div class="grille-form-liste">
+  <section class="panneau" aria-labelledby="mar-titre">
+    <h2 id="mar-titre">Enregistrer un mariage</h2>
+    @for (m of erreursGenerales(); track $index) {
+      <div class="alerte erreur" role="alert">{{ m }}</div>
+    }
+    <form [formGroup]="form" (ngSubmit)="creer()">
+      <div class="champ">
+        <label for="mar-c1">Premier conjoint</label>
+        <app-personne-select inputId="mar-c1" formControlName="conjoint1_id" [exclure]="form.value.conjoint2_id ?? null" [invalide]="!!erreur()?.errors['conjoint1_id']" />
+        <app-erreurs-champ [erreur]="erreur()" champ="conjoint1_id" />
+      </div>
+      <div class="champ">
+        <label for="mar-c2">Second conjoint</label>
+        <app-personne-select inputId="mar-c2" formControlName="conjoint2_id" [exclure]="form.value.conjoint1_id ?? null" [invalide]="!!erreur()?.errors['conjoint2_id']" />
+        <app-erreurs-champ [erreur]="erreur()" champ="conjoint2_id" />
+      </div>
+      <div class="champ">
+        <label for="mar-debut">Date du mariage</label>
+        <input id="mar-debut" type="date" formControlName="date_debut" [class.invalide]="!!erreur()?.errors['date_debut']" />
+        <app-erreurs-champ [erreur]="erreur()" champ="date_debut" />
+      </div>
+      <label class="case">
+        <input type="checkbox" formControlName="dissous" />
+        Ce mariage est déjà dissous (saisie de l'historique)
+      </label>
+      @if (form.value.dissous) {
+        <div class="champs-ligne">
+          <div class="champ">
+            <label for="mar-fin">Date de fin</label>
+            <input id="mar-fin" type="date" formControlName="date_fin" [class.invalide]="!!erreur()?.errors['date_fin']" />
+            <app-erreurs-champ [erreur]="erreur()" champ="date_fin" />
+          </div>
+          <div class="champ">
+            <label for="mar-cause">Cause</label>
+            <select id="mar-cause" formControlName="cause_dissolution" [class.invalide]="!!erreur()?.errors['cause_dissolution']">
+              <option value="">Choisir</option>
+              <option value="deces">Décès</option>
+              <option value="divorce">Divorce</option>
+            </select>
+            <app-erreurs-champ [erreur]="erreur()" champ="cause_dissolution" />
+          </div>
+        </div>
+      }
+      <button class="btn plein" type="submit" [disabled]="form.invalid || enCours()">Enregistrer le mariage</button>
+    </form>
+    <p class="aide-bas muted">
+      Un mariage sans date de fin est considéré en cours (art. 125 et 143) : une personne ne peut en avoir qu'un à la fois.
+      La cause de dissolution compte : après un décès, beau-frère et belle-sœur peuvent se marier avec l'autorisation du
+      procureur ; après un divorce, l'interdiction demeure.
+    </p>
+  </section>
+
+  <section class="panneau" aria-labelledby="mar-liste">
+    <h2 id="mar-liste">Mariages enregistrés ({{ mariages().length }})</h2>
+    @for (m of lignes(); track m.id) {
+      <article class="mariage" [class.dissous]="!m.en_cours">
+        <div class="tete">
+          <h3>
+            <a [routerLink]="['/personnes', m.conjoint1_id]">{{ store.nom(m.conjoint1_id) }}</a>
+            <span class="et">et</span>
+            <a [routerLink]="['/personnes', m.conjoint2_id]">{{ store.nom(m.conjoint2_id) }}</a>
+          </h3>
+          @if (m.en_cours) {
+            <span class="etiquette indigo">En cours</span>
+          } @else {
+            <span class="etiquette">Dissous par {{ causes[m.cause_dissolution!] | lowercase }}</span>
+          }
+        </div>
+        <p class="dates">
+          Mariés le {{ dateLongue(m.date_debut) }}@if (m.date_fin) {<span>, union dissoute le {{ dateLongue(m.date_fin) }}</span>}.
+          <span class="muted numero">Mariage n° {{ m.id }}</span>
+        </p>
+        <app-classes-owl [classes]="m.classes" />
+
+        @if (aDissoudre() === m.id) {
+          <form class="dissolution" [formGroup]="dissolution" (ngSubmit)="dissoudre(m)">
+            <div class="champ">
+              <label [for]="'dis-fin-' + m.id">Date de fin</label>
+              <input [id]="'dis-fin-' + m.id" type="date" formControlName="date_fin" [min]="m.date_debut" />
+              <app-erreurs-champ [erreur]="erreurDissolution()" champ="date_fin" />
+            </div>
+            <div class="champ">
+              <label [for]="'dis-cause-' + m.id">Cause</label>
+              <select [id]="'dis-cause-' + m.id" formControlName="cause_dissolution">
+                <option value="">Choisir</option>
+                <option value="deces">Décès</option>
+                <option value="divorce">Divorce</option>
+              </select>
+              <app-erreurs-champ [erreur]="erreurDissolution()" champ="cause_dissolution" />
+            </div>
+            <div class="actions">
+              <button class="btn petit" type="submit" [disabled]="dissolution.invalid">Enregistrer la dissolution</button>
+              <button class="lien-discret" type="button" (click)="aDissoudre.set(null)">Annuler</button>
+            </div>
+          </form>
+        } @else {
+          <div class="actions bas">
+            @if (m.en_cours) {
+              <button class="btn secondaire petit" type="button" (click)="ouvrirDissolution(m)">Dissoudre</button>
+            }
+            @if (aSupprimer() === m.id) {
+              <button class="btn danger petit" type="button" (click)="supprimer(m)">Confirmer la suppression</button>
+              <button class="lien-discret" type="button" (click)="aSupprimer.set(null)">Annuler</button>
+            } @else {
+              <button class="lien-discret danger" type="button" (click)="aSupprimer.set(m.id)">Supprimer</button>
+            }
+          </div>
+        }
+      </article>
+    } @empty {
+      @if (chargement()) {
+        <p class="chargement">Chargement…</p>
+      } @else {
+        <div class="vide"><p>Aucun mariage. Les conjoints servent à détecter les liens d'alliance.</p></div>
+      }
+    }
+  </section>
+</div>

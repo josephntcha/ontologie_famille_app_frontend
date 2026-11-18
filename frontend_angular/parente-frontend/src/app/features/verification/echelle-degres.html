@@ -1,0 +1,64 @@
+@let l = lien();
+<figure class="echelle" [class.directe]="ligneDirecte()" [attr.aria-label]="l.message">
+  <div class="sommet">
+    <div class="carte ancetre">
+      <span class="role">{{ ligneDirecte() ? 'Ascendant' : sommet().ids.length > 1 ? 'Ancêtres communs' : 'Ancêtre commun' }}</span>
+      @for (n of sommet().noms; track $index) {
+        <a [routerLink]="['/personnes', sommet().ids[$index]]">
+          <span class="sexe-icone" [class]="sommet().sexes[$index] ?? ''"></span>{{ n }}
+        </a>
+      }
+    </div>
+  </div>
+
+  <div class="branches" [class.une]="g1() === 0 || g2() === 0">
+    @if (g1() > 0) {
+      <ol class="branche">
+        @for (m of gauche(); track m.id) {
+          <li [class.cible]="m.generation === g1()">
+            <div class="carte">
+              <span class="gen" [attr.aria-label]="'Génération ' + m.generation">{{ m.generation }}</span>
+              @if (m.id > 0) {
+                <a [routerLink]="['/personnes', m.id]"><span class="sexe-icone" [class]="m.sexe ?? ''"></span>{{ m.nom }}</a>
+              } @else {
+                <span class="muted">{{ m.nom }}</span>
+              }
+            </div>
+          </li>
+        }
+      </ol>
+    }
+    @if (g2() > 0) {
+      <ol class="branche">
+        @for (m of droite(); track m.id) {
+          <li [class.cible]="m.generation === g2()">
+            <div class="carte">
+              <span class="gen" [attr.aria-label]="'Génération ' + m.generation">{{ m.generation }}</span>
+              @if (m.id > 0) {
+                <a [routerLink]="['/personnes', m.id]"><span class="sexe-icone" [class]="m.sexe ?? ''"></span>{{ m.nom }}</a>
+              } @else {
+                <span class="muted">{{ m.nom }}</span>
+              }
+            </div>
+          </li>
+        }
+      </ol>
+    }
+  </div>
+
+  <figcaption class="calcul">
+    @if (ligneDirecte()) {
+      <span class="terme">{{ g1() + g2() }} génération{{ g1() + g2() > 1 ? 's' : '' }}</span>
+      <span class="egal">=</span>
+      <span class="resultat">{{ degreEnLettres(l.degre) }}</span>
+      <span class="libelle">en ligne directe : {{ l.libelle | lowercase }}</span>
+    } @else {
+      <span class="terme">g({{ nomP1() }}) = {{ g1() }}</span>
+      <span class="plus">+</span>
+      <span class="terme">g({{ nomP2() }}) = {{ g2() }}</span>
+      <span class="egal">=</span>
+      <span class="resultat">{{ degreEnLettres(l.degre) }}</span>
+      <span class="libelle">en ligne collatérale : {{ l.libelle | lowercase }}</span>
+    }
+  </figcaption>
+</figure>

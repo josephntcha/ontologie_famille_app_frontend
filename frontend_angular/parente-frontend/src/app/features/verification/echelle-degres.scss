@@ -1,0 +1,188 @@
+:host {
+  display: block;
+}
+
+.echelle {
+  margin: 0;
+  --ligne: var(--indigo-600);
+}
+
+.sommet {
+  display: flex;
+  justify-content: center;
+  position: relative;
+  padding-bottom: 1.5rem;
+  // tronc vertical sous l'ancêtre
+  &::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    height: 1.5rem;
+    border-left: 2px solid var(--ligne);
+  }
+}
+
+.carte {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  background: var(--surface);
+  border: 1.5px solid var(--trait-fort);
+  border-radius: 8px;
+  padding: 0.55rem 0.9rem;
+  position: relative;
+  z-index: 1;
+  min-width: 12rem;
+  a {
+    color: var(--encre);
+    text-decoration: none;
+    font-weight: 600;
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+  &.ancetre {
+    border-color: var(--or);
+    background: var(--or-pale);
+    text-align: left;
+    .role {
+      font-size: 0.78rem;
+      color: #7a5a0c;
+      font-weight: 600;
+    }
+  }
+}
+
+.branches {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  position: relative;
+  padding-top: 1.5rem;
+  // barre horizontale qui relie les deux branches
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 25%;
+    right: 25%;
+    border-top: 2px solid var(--ligne);
+  }
+  &.une {
+    grid-template-columns: 1fr;
+    padding-top: 0;
+    &::before {
+      display: none;
+    }
+  }
+}
+
+.branche {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.75rem;
+  position: relative;
+  // descente verticale de chaque branche
+  &::before {
+    content: '';
+    position: absolute;
+    top: -1.5rem;
+    bottom: 1.25rem;
+    left: 50%;
+    border-left: 2px solid var(--ligne);
+  }
+  li {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+  }
+  .carte {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .gen {
+    position: absolute;
+    left: -2.6rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1.6rem;
+    height: 1.6rem;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--indigo-100);
+    color: var(--indigo-700);
+    font-size: 0.78rem;
+    font-weight: 700;
+    z-index: 2;
+  }
+  li.cible .carte {
+    border-color: var(--indigo-700);
+    background: var(--indigo-700);
+    a {
+      color: #fff;
+    }
+    .sexe-icone {
+      border-color: #fff;
+    }
+  }
+}
+
+.calcul {
+  margin-top: 1.75rem;
+  padding-top: 1.25rem;
+  border-top: 1px dashed var(--trait-fort);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.4rem 0.6rem;
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  .plus,
+  .egal {
+    color: var(--gris);
+  }
+  .resultat {
+    font-weight: 700;
+    font-size: 1.6rem;
+    color: var(--indigo-900);
+  }
+  .libelle {
+    flex-basis: 100%;
+    text-align: center;
+    font-family: var(--sans);
+    font-size: 0.9rem;
+    color: var(--gris);
+  }
+}
+
+@media (max-width: 640px) {
+  .carte {
+    min-width: 0;
+    max-width: 42vw;
+    font-size: 0.82rem;
+    padding: 0.45rem 0.6rem;
+  }
+  .branche .carte a {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+  .branche .gen {
+    position: static;
+    transform: none;
+    width: 1.3rem;
+    height: 1.3rem;
+    font-size: 0.7rem;
+    flex: none;
+  }
+}

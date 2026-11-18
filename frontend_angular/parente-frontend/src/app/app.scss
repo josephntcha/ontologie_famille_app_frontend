@@ -1,0 +1,160 @@
+.skip {
+  position: absolute;
+  left: -999px;
+  top: 0;
+  z-index: 100;
+  background: var(--surface);
+  padding: 0.5rem 1rem;
+  &:focus {
+    left: 1rem;
+    top: 1rem;
+  }
+}
+
+.shell {
+  display: grid;
+  grid-template-columns: 248px minmax(0, 1fr);
+  min-height: 100vh;
+  background: linear-gradient(to right, var(--indigo-900) 248px, transparent 248px);
+}
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding: 1.5rem 1rem 1.25rem;
+  background: var(--indigo-900);
+  color: #dfe3f5;
+}
+
+.marque {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  color: #fff;
+  text-decoration: none;
+  padding: 0 0.5rem;
+  strong {
+    display: block;
+    font-family: var(--serif);
+    font-size: 1.2rem;
+    font-weight: 600;
+    line-height: 1.15;
+  }
+  small {
+    display: block;
+    font-size: 0.78rem;
+    color: #aab3dc;
+    margin-top: 0.15rem;
+  }
+  svg {
+    color: var(--or);
+    flex: none;
+  }
+}
+
+nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  a {
+    color: #c9cfec;
+    text-decoration: none;
+    padding: 0.6rem 0.75rem;
+    border-radius: 6px;
+    font-weight: 500;
+    border-left: 3px solid transparent;
+    &:hover {
+      background: rgba(255, 255, 255, 0.06);
+      color: #fff;
+    }
+    &.actif {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      border-left-color: var(--or);
+    }
+  }
+}
+
+.burger {
+  display: none;
+}
+
+.etat-api {
+  margin-top: auto;
+  font-size: 0.8rem;
+  color: #aab3dc;
+  padding: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  .pastille {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #8189ad;
+  }
+  &[data-etat='ok'] .pastille {
+    background: #5fd394;
+  }
+  &[data-etat='incoherente'] .pastille {
+    background: #f0b44c;
+  }
+  &[data-etat='injoignable'] .pastille {
+    background: #ff7a7a;
+  }
+  .lien-discret {
+    color: #fff;
+  }
+}
+
+main {
+  padding: 2.5rem clamp(1rem, 4vw, 3.5rem) 4rem;
+  outline: none;
+  min-width: 0;
+}
+
+@media (max-width: 860px) {
+  .shell {
+    grid-template-columns: 1fr;
+    background: none;
+  }
+  .sidebar {
+    position: static;
+    height: auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+  }
+  .burger {
+    display: inline-block;
+    background: transparent;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 6px;
+    padding: 0.4rem 0.8rem;
+    font: inherit;
+  }
+  nav,
+  .etat-api {
+    display: none;
+    width: 100%;
+  }
+  .menu-ouvert {
+    nav,
+    .etat-api {
+      display: flex;
+    }
+  }
+  main {
+    padding-top: 1.5rem;
+  }
+}

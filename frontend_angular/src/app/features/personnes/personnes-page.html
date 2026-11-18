@@ -1,0 +1,106 @@
+<header class="page-tete">
+  <div>
+    <h1>Personnes</h1>
+    <p class="chapo">
+      Chaque personne reçoit un identifiant unique. Une même personne saisie deux fois casse la détection des liens :
+      le registre signale les doublons probables (même nom, même date de naissance).
+    </p>
+  </div>
+</header>
+
+<div class="page">
+  @if (groupesDoublons().length > 0) {
+    <div class="alerte attention" role="status">
+      <strong>{{ groupesDoublons().length }} groupe(s) de doublons probables</strong>
+      Vérifiez s'il s'agit de la même personne ; si oui, gardez une seule fiche et supprimez l'autre.
+      @for (g of groupesDoublons(); track g.nom + g.date_naissance) {
+        <div class="doublon-groupe">
+          {{ g.nom }}, né(e)s le {{ dateLongue(g.date_naissance) }} :
+          @for (p of g.personnes; track p.id) {
+            <a [routerLink]="['/personnes', p.id]">{{ p.prenom }} (n° {{ p.id }})</a>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <div class="grille-form-liste">
+    <section class="panneau" aria-labelledby="ajout-titre">
+      <h2 id="ajout-titre">Ajouter une personne</h2>
+      @if (doublonsCreation(); as d) {
+        <div class="alerte attention" role="alert">
+          <strong>Doublon probable</strong>
+          {{ d.cree.prenom }} {{ d.cree.nom }} a bien été enregistré(e), mais ces personnes portent le même nom et sont
+          nées le même jour :
+          <ul>
+            @for (p of d.doublons; track p.id) {
+              <li><a [routerLink]="['/personnes', p.id]">{{ p.prenom }} {{ p.nom }}, n° {{ p.id }}</a></li>
+            }
+          </ul>
+        </div>
+      }
+      @for (m of erreursGenerales(); track $index) {
+        <div class="alerte erreur" role="alert">{{ m }}</div>
+      }
+      <app-personne-form prefixe="ajout" [erreur]="erreur()" [enCours]="enCours()" (valider)="creer($event)" />
+    </section>
+
+    <section class="panneau" aria-labelledby="liste-titre">
+      <div class="liste-tete">
+        <h2 id="liste-titre">Registre ({{ store.personnes().length }})</h2>
+        <input
+          class="recherche"
+          type="search"
+          placeholder="Rechercher un nom ou un numéro"
+          aria-label="Rechercher une personne"
+          [ngModel]="recherche()"
+          (ngModelChange)="recherche.set($event)"
+        />
+      </div>
+
+      @if (store.erreur(); as e) {
+        <div class="alerte erreur">{{ e }}</div>
+      }
+
+      @if (filtrees().length > 0) {
+        <div class="table-wrap">
+          <table class="registre">
+            <thead>
+              <tr>
+                <th scope="col">N°</th>
+                <th scope="col">Prénom et nom</th>
+                <th scope="col">Naissance</th>
+                <th scope="col" class="num">Âge</th>
+                <th scope="col"><span class="sr-only">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of filtrees(); track p.id) {
+                <tr [class.recent]="p.id === derniereCreee()">
+                  <td class="id">{{ p.id }}</td>
+                  <td>
+                    <span class="sexe-icone" [class]="p.sexe" [attr.title]="p.sexe === 'M' ? 'Masculin' : 'Féminin'"></span>
+                    <a [routerLink]="['/personnes', p.id]">{{ p.prenom }} {{ p.nom }}</a>
+                  </td>
+                  <td>{{ dateLongue(p.date_naissance) }}</td>
+                  <td class="num">{{ p.age }} ans</td>
+                  <td class="num">
+                    <a class="btn secondaire petit" [routerLink]="['/personnes', p.id]">Ouvrir la fiche</a>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else if (store.chargement()) {
+        <p class="chargement">Chargement du registre…</p>
+      } @else if (recherche()) {
+        <div class="vide"><p>Aucune personne ne correspond à « {{ recherche() }} ».</p></div>
+      } @else {
+        <div class="vide">
+          <p>Le registre est vide. Commencez par la personne la plus âgée de la famille, puis ses descendants.</p>
+        </div>
+      }
+    </section>
+  </div>
+</div>

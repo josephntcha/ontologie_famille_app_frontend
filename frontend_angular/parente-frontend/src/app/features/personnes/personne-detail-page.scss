@@ -1,0 +1,103 @@
+.retour {
+  display: inline-block;
+  font-size: 0.88rem;
+  margin-bottom: 0.6rem;
+  &::before {
+    content: '‹ ';
+  }
+}
+
+.sexe-icone.grand {
+  width: 1.4rem;
+  height: 1.4rem;
+  border-width: 3px;
+  margin-right: 0.75rem;
+  vertical-align: 0;
+}
+
+.grille-detail {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+  @media (max-width: 960px) {
+    grid-template-columns: 1fr;
+  }
+}
+.colonne {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  .panneau + .panneau {
+    margin-top: 0;
+  }
+}
+
+.relations {
+  margin: 0;
+  display: grid;
+  gap: 1rem;
+  > div {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--trait);
+    &:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+    @media (max-width: 600px) {
+      grid-template-columns: 1fr;
+      gap: 0.25rem;
+    }
+  }
+  dt {
+    font-weight: 600;
+    span {
+      display: block;
+      font-weight: 400;
+      font-size: 0.8rem;
+    }
+  }
+  dd {
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 1rem;
+  }
+}
+
+.mariage {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: baseline;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--trait);
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.uri {
+  margin-top: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.82rem;
+  code {
+    word-break: break-all;
+    background: var(--papier);
+    padding: 0.4rem 0.55rem;
+    border-radius: 4px;
+  }
+}
+
+.zone-danger {
+  border-color: #ecd0d2;
+  p {
+    margin-bottom: 1rem;
+    font-size: 0.88rem;
+  }
+}

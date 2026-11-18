@@ -1,0 +1,200 @@
+<header class="page-tete">
+  <div>
+    <h1>Vérification</h1>
+    <p class="chapo">
+      Choisissez deux personnes : le registre répond à trois questions. Sont-elles liées par le sang, par alliance, et
+      peuvent-elles se marier selon le droit béninois&nbsp;?
+    </p>
+  </div>
+</header>
+
+<div class="page">
+  <form class="selection" (ngSubmit)="soumettre()">
+    <div class="champ">
+      <label for="ver-p1">Première personne</label>
+      <app-personne-select inputId="ver-p1" [formControl]="c1" [exclure]="c2.value" />
+      <app-erreurs-champ [erreur]="erreur()" champ="personne1_id" />
+    </div>
+    <button class="btn secondaire inverser" type="button" (click)="inverser()" [disabled]="c1.value == null || c2.value == null" aria-label="Inverser les deux personnes" title="Inverser">
+      ⇄
+    </button>
+    <div class="champ">
+      <label for="ver-p2">Seconde personne</label>
+      <app-personne-select inputId="ver-p2" [formControl]="c2" [exclure]="c1.value" />
+      <app-erreurs-champ [erreur]="erreur()" champ="personne2_id" />
+    </div>
+    <button class="btn" type="submit" [disabled]="c1.value == null || c2.value == null || enCours()">
+      {{ enCours() ? 'Vérification…' : 'Vérifier' }}
+    </button>
+  </form>
+
+  @if (erreur(); as e) {
+    @if (!e.errors['personne1_id'] && !e.errors['personne2_id']) {
+      <div class="alerte erreur" role="alert">{{ e.message }}</div>
+    }
+  }
+
+  @if (resultat(); as r) {
+    <div class="resultat" [class.attenue]="enCours()" aria-live="polite">
+      <!-- Verdict -->
+      <section class="verdict" [attr.data-verdict]="r.mariage.verdict" aria-labelledby="verdict-titre">
+        <div class="verdict-tete">
+          <p class="couple">
+            <a [routerLink]="['/personnes', r.personne1.id]">{{ r.personne1.prenom }} {{ r.personne1.nom }}</a>
+            et
+            <a [routerLink]="['/personnes', r.personne2.id]">{{ r.personne2.prenom }} {{ r.personne2.nom }}</a>
+          </p>
+          <h2 id="verdict-titre">{{ verdicts[r.mariage.verdict].titre }}</h2>
+          <p class="resume">{{ verdicts[r.mariage.verdict].resume }}</p>
+        </div>
+
+        <ol class="regles" aria-label="Règles appliquées">
+          @for (regle of r.mariage.regles; track regle.code) {
+            <li [attr.data-verdict]="regle.verdict">
+              <span class="article">{{ regle.article }}</span>
+              <span class="etiquette" [class.rouge]="regle.verdict === 'interdit'" [class.vert]="regle.verdict === 'autorise'" [class.ambre]="regle.verdict === 'autorisation_requise'">
+                {{ verdictRegle[regle.verdict] }}
+              </span>
+              <p>{{ regle.message }}</p>
+            </li>
+          }
+        </ol>
+
+        @if (r.mariage.verdict === 'verification_incomplete' && r.completude.manquants.length) {
+          <div class="a-completer">
+            <strong>Pour conclure, il manque dans l'arbre :</strong>
+            <ul>
+              @for (m of r.completude.manquants; track $index) {
+                <li><a [routerLink]="['/personnes', m.personne_id]">{{ m.description }}</a></li>
+              }
+            </ul>
+            <a class="btn secondaire petit" routerLink="/liens/filiations">Déclarer les parents manquants</a>
+          </div>
+        }
+
+        <p class="avertissement">{{ r.mariage.avertissement }}</p>
+      </section>
+
+      <div class="details">
+        <!-- Lien de sang -->
+        <section class="panneau" aria-labelledby="sang-titre">
+          <div class="panneau-tete">
+            <h2 id="sang-titre">Lien de sang</h2>
+            <a class="btn secondaire petit" [routerLink]="['/arbre']" [queryParams]="{ p1: r.personne1.id, p2: r.personne2.id }">
+              Voir dans l'arbre
+            </a>
+          </div>
+          @if (r.lien_de_sang.existe) {
+            <app-echelle-degres
+              [lien]="r.lien_de_sang"
+              [personne1]="r.personne1"
+              [personne2]="r.personne2"
+              [chemin]="chemin()"
+            />
+            @if (r.lien_de_sang.demi) {
+              <p class="note">Un seul parent commun : le lien est « demi » (demi-frère, demi-sœur).</p>
+            }
+          } @else {
+            <p class="aucun">{{ r.lien_de_sang.message }}.</p>
+            <p class="muted">
+              Le raisonnement OWL se fait en monde ouvert : un parent non saisi est inconnu, pas inexistant. L'absence de
+              lien n'est donc jamais affirmée.
+            </p>
+          }
+
+          <div class="hermit" [class.ecart]="!concordance()">
+            <span class="etiquette" [class.vert]="r.lien_de_sang.infere_par_raisonneur" [class.indigo]="!r.lien_de_sang.infere_par_raisonneur">
+              HermiT
+            </span>
+            @if (r.lien_de_sang.infere_par_raisonneur) {
+              Le raisonneur infère <code>lienDeSangAvec({{ r.personne1.prenom }}, {{ r.personne2.prenom }})</code> à partir
+              de <code>ancetreDe</code> et de la chaîne <code>descendantDe ∘ ancetreDe</code>.
+            } @else {
+              Le raisonneur n'infère pas <code>lienDeSangAvec({{ r.personne1.prenom }}, {{ r.personne2.prenom }})</code>.
+            }
+            @if (!concordance()) {
+              <strong class="ecart-msg">Écart entre HermiT et le calcul du degré : vérifiez la cohérence des données.</strong>
+            }
+          </div>
+        </section>
+
+        <div class="colonne">
+          <!-- Lien d'alliance -->
+          <section class="panneau" aria-labelledby="alliance-titre">
+            <h2 id="alliance-titre">Lien d'alliance</h2>
+            @if (r.lien_alliance.existe) {
+              <p class="libelle-lien">{{ r.lien_alliance.libelle }}</p>
+              <dl class="faits">
+                <div><dt>Ligne</dt><dd>{{ typesLien[r.lien_alliance.type!] }}</dd></div>
+                <div><dt>Degré</dt><dd>{{ degreEnLettres(r.lien_alliance.degre) }}</dd></div>
+                @if (r.lien_alliance.conjoint_id) {
+                  <div>
+                    <dt>Par le conjoint</dt>
+                    <dd><a [routerLink]="['/personnes', r.lien_alliance.conjoint_id]">{{ store.nom(r.lien_alliance.conjoint_id) }}</a></dd>
+                  </div>
+                }
+                @if (r.lien_alliance.mariage_id) {
+                  <div>
+                    <dt>Mariage</dt>
+                    <dd>
+                      n° {{ r.lien_alliance.mariage_id }}
+                      @if (r.lien_alliance.mariage_dissous_par_deces) {
+                        <span class="etiquette ambre">dissous par décès</span>
+                      }
+                    </dd>
+                  </div>
+                } @else {
+                  <div><dt>Origine</dt><dd>Lien beauParentDe déclaré</dd></div>
+                }
+              </dl>
+            } @else {
+              <p class="aucun">{{ r.lien_alliance.message }}.</p>
+            }
+          </section>
+
+          <!-- Complétude -->
+          <section class="panneau" aria-labelledby="compl-titre">
+            <h2 id="compl-titre">Fiabilité de l'arbre</h2>
+            @for (cote of [{ p: r.personne1, c: r.completude.personne1 }, { p: r.personne2, c: r.completude.personne2 }]; track cote.p.id) {
+              <div class="completude">
+                <div class="qui">
+                  <a [routerLink]="['/personnes', cote.p.id]">{{ cote.p.prenom }} {{ cote.p.nom }}</a>
+                  <span class="etiquette" [class.vert]="cote.c.complet">{{ resumeCompletude(cote.c) }}</span>
+                </div>
+                <div class="jauge">
+                  <span class="lib">Parents</span>
+                  <span class="points" [attr.aria-label]="cote.c.parents_connus + ' sur ' + cote.c.parents_attendus">
+                    @for (on of points(cote.c.parents_connus, cote.c.parents_attendus); track $index) {
+                      <i [class.on]="on"></i>
+                    }
+                  </span>
+                  <span class="val">{{ cote.c.parents_connus }}/{{ cote.c.parents_attendus }}</span>
+                </div>
+                <div class="jauge">
+                  <span class="lib">Grands-parents</span>
+                  <span class="points" [attr.aria-label]="cote.c.grands_parents_connus + ' sur ' + cote.c.grands_parents_attendus">
+                    @for (on of points(cote.c.grands_parents_connus, cote.c.grands_parents_attendus); track $index) {
+                      <i [class.on]="on"></i>
+                    }
+                  </span>
+                  <span class="val">{{ cote.c.grands_parents_connus }}/{{ cote.c.grands_parents_attendus }}</span>
+                </div>
+              </div>
+            }
+            <p class="muted petit-texte">
+              Le verdict « autorisé » n'est donné que si les deux arbres sont complets sur deux générations : c'est ce qui
+              suffit pour détecter tout empêchement jusqu'au 3e degré.
+            </p>
+          </section>
+        </div>
+      </div>
+    </div>
+  } @else if (enCours()) {
+    <p class="chargement">Calcul du lien et raisonnement HermiT en cours…</p>
+  } @else if (!erreur()) {
+    <div class="vide invite">
+      <p>Sélectionnez deux personnes pour lancer la vérification.</p>
+      <p class="muted">Exemple avec la famille de démonstration : Kid et Cousin (cousins germains), ou Maman et Tonton (beau-frère et belle-sœur).</p>
+    </div>
+  }
+</div>

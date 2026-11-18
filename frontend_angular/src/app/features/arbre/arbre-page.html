@@ -1,0 +1,96 @@
+<header class="page-tete">
+  <div>
+    <h1>Arbre</h1>
+    <p class="chapo">
+      Ancêtres, descendants et conjoints des deux personnes. Le chemin qui les relie par l'ancêtre commun le plus proche
+      est surligné ; cliquez sur une personne pour voir les classes déduites par HermiT.
+    </p>
+  </div>
+</header>
+
+<div class="page">
+  <form class="selection" (ngSubmit)="afficher()">
+    <div class="champ">
+      <label for="arb-p1">Première personne</label>
+      <app-personne-select inputId="arb-p1" [formControl]="c1" [exclure]="c2.value" />
+    </div>
+    <div class="champ">
+      <label for="arb-p2">Seconde personne</label>
+      <app-personne-select inputId="arb-p2" [formControl]="c2" [exclure]="c1.value" />
+    </div>
+    <button class="btn" type="submit" [disabled]="c1.value == null || c2.value == null || enCours()">Afficher l'arbre</button>
+  </form>
+
+  @if (erreur(); as e) {
+    <div class="alerte erreur" role="alert">{{ e.message }}</div>
+  }
+
+  @if (arbre(); as a) {
+    <div class="vue" [class.attenue]="enCours()">
+      <section class="toile" aria-label="Graphe de l'arbre">
+        <div class="barre">
+          <p class="chemin">
+            @if (a.chemin.length) {
+              <span class="muted">Chemin :</span>
+              @for (n of cheminNoms(); track $index) {
+                <span class="pas" [class.anc]="a.chemin[$index] === a.ancetre_commun_id">{{ n }}</span>
+              }
+            } @else {
+              <span class="muted">Aucun lien de sang trouvé dans les données connues : pas de chemin à surligner.</span>
+            }
+          </p>
+          <div class="actions">
+            <button class="btn secondaire petit" type="button" (click)="recentrer()">Recentrer</button>
+            <button class="btn secondaire petit" type="button" (click)="telecharger()">Télécharger en PNG</button>
+          </div>
+        </div>
+        <app-arbre-graphe
+          class="graphe"
+          [arbre]="a"
+          [personne1]="ids()!.a"
+          [personne2]="ids()!.b"
+          (selection)="selectionId.set($event)"
+        />
+        <ul class="legende" aria-label="Légende">
+          <li><span class="sym carre"></span> Homme</li>
+          <li><span class="sym rond"></span> Femme</li>
+          <li><span class="sym rond plein"></span> Sur le chemin</li>
+          <li><span class="sym rond or"></span> Ancêtre commun</li>
+          <li><span class="trait plein"></span> parentDe</li>
+          <li><span class="trait tirets"></span> marieA</li>
+          <li><span class="trait points"></span> beauParentDe</li>
+        </ul>
+      </section>
+
+      <aside class="panneau fiche" aria-live="polite">
+        @if (selection(); as n) {
+          <h2><span class="sexe-icone" [class]="n.sexe"></span>{{ n.prenom }} {{ n.nom }}</h2>
+          <p class="muted">Fiche n° {{ n.id }}</p>
+          <h3>Classes déduites par HermiT</h3>
+          <app-classes-owl [classes]="n.classes" />
+          <div class="actions bas">
+            <a class="btn secondaire petit" [routerLink]="['/personnes', n.id]">Ouvrir la fiche</a>
+            @if (n.id !== ids()!.a) {
+              <a class="btn secondaire petit" routerLink="/verification" [queryParams]="{ p1: ids()!.a, p2: n.id }">
+                Vérifier avec {{ store.get(ids()!.a)?.prenom }}
+              </a>
+            }
+          </div>
+        } @else {
+          <h2>{{ a.noeuds.length }} personnes</h2>
+          <p class="muted">
+            {{ a.aretes.length }} liens affichés. Sélectionnez une personne dans le graphe pour afficher ses classes OWL
+            (Oncle, Cousine, DemiFrere…).
+          </p>
+          <a class="btn petit bas" routerLink="/verification" [queryParams]="{ p1: ids()!.a, p2: ids()!.b }">
+            Ouvrir la vérification
+          </a>
+        }
+      </aside>
+    </div>
+  } @else if (enCours()) {
+    <p class="chargement">Construction de l'arbre et classification HermiT…</p>
+  } @else {
+    <div class="vide invite"><p>Choisissez deux personnes pour afficher leur arbre commun.</p></div>
+  }
+</div>

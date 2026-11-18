@@ -1,0 +1,167 @@
+@if (erreurChargement(); as e) {
+  <div class="page">
+    <p class="alerte erreur">
+      {{ e.status === 404 ? 'Cette personne n’existe pas ou a été supprimée.' : e.message }}
+    </p>
+    <a class="btn secondaire" routerLink="/personnes">Retour au registre</a>
+  </div>
+} @else if (detail(); as d) {
+  <header class="page-tete">
+    <div>
+      <a routerLink="/personnes" class="retour">Registre des personnes</a>
+      <h1>
+        <span class="sexe-icone grand" [class]="d.sexe" aria-hidden="true"></span>{{ d.prenom }} {{ d.nom }}
+      </h1>
+      <p class="chapo">
+        {{ d.sexe === 'M' ? 'Né' : 'Née' }} le {{ dateLongue(d.date_naissance) }}, {{ d.age }} ans. Fiche n° {{ d.id }}.
+      </p>
+    </div>
+    <div class="actions">
+      @if (!edition()) {
+        <button class="btn secondaire" type="button" (click)="edition.set(true)">Modifier la fiche</button>
+      }
+      <a class="btn secondaire" routerLink="/liens">Déclarer un lien</a>
+    </div>
+  </header>
+
+  <div class="page grille-detail">
+    <div class="colonne">
+      @if (edition()) {
+        <section class="panneau" aria-labelledby="edit-titre">
+          <h2 id="edit-titre">Modifier la fiche</h2>
+          <app-personne-form
+            prefixe="edit"
+            [initial]="d"
+            [erreur]="erreurEdition()"
+            [enCours]="enregistrement()"
+            libelleBouton="Enregistrer les modifications"
+            [annulable]="true"
+            (valider)="enregistrer($event)"
+            (annuler)="edition.set(false)"
+          />
+        </section>
+      }
+
+      <section class="panneau" aria-labelledby="rel-titre">
+        <h2 id="rel-titre">Relations connues</h2>
+        <dl class="relations">
+          <div>
+            <dt>Parents <span class="muted">({{ d.parents.length }} sur 2 connus)</span></dt>
+            <dd>
+              @for (p of d.parents; track p.id) {
+                <a [routerLink]="['/personnes', p.id]">{{ p.prenom }} {{ p.nom }}</a>
+              } @empty {
+                <span class="muted">Aucun parent saisi</span>
+              }
+            </dd>
+          </div>
+          <div>
+            <dt>Frères et sœurs <span class="muted">(déduits des parents communs)</span></dt>
+            <dd>
+              @for (p of freresSoeurs(); track p.id) {
+                <a [routerLink]="['/personnes', p.id]">{{ p.prenom }} {{ p.nom }}</a>
+              } @empty {
+                <span class="muted">Aucun</span>
+              }
+            </dd>
+          </div>
+          <div>
+            <dt>Enfants</dt>
+            <dd>
+              @for (p of d.enfants; track p.id) {
+                <a [routerLink]="['/personnes', p.id]">{{ p.prenom }} {{ p.nom }}</a>
+              } @empty {
+                <span class="muted">Aucun</span>
+              }
+            </dd>
+          </div>
+          @if (d.beaux_parents.length || d.beaux_enfants.length) {
+            <div>
+              <dt>Beaux-parents</dt>
+              <dd>
+                @for (p of d.beaux_parents; track p.id) {
+                  <a [routerLink]="['/personnes', p.id]">{{ p.prenom }} {{ p.nom }}</a>
+                } @empty {
+                  <span class="muted">Aucun</span>
+                }
+              </dd>
+            </div>
+            <div>
+              <dt>Beaux-enfants</dt>
+              <dd>
+                @for (p of d.beaux_enfants; track p.id) {
+                  <a [routerLink]="['/personnes', p.id]">{{ p.prenom }} {{ p.nom }}</a>
+                } @empty {
+                  <span class="muted">Aucun</span>
+                }
+              </dd>
+            </div>
+          }
+        </dl>
+      </section>
+
+      <section class="panneau" aria-labelledby="mar-titre">
+        <h2 id="mar-titre">Mariages</h2>
+        @for (m of d.mariages; track m.id) {
+          <div class="mariage">
+            <div>
+              Avec <a [routerLink]="['/personnes', conjointIdDe(m)]">{{ conjointDe(m) }}</a>, le
+              {{ dateLongue(m.date_debut) }}
+              @if (m.date_fin) {
+                <span class="muted">
+                  – dissous le {{ dateLongue(m.date_fin) }} ({{ causes[m.cause_dissolution!] | lowercase }})</span
+                >
+              }
+            </div>
+            @if (m.en_cours) {
+              <span class="etiquette indigo">En cours</span>
+            } @else {
+              <span class="etiquette">Dissous</span>
+            }
+          </div>
+        } @empty {
+          <p class="muted">Aucun mariage enregistré.</p>
+        }
+      </section>
+    </div>
+
+    <div class="colonne">
+      <section class="panneau" aria-labelledby="cls-titre">
+        <h2 id="cls-titre">Classes déduites par HermiT</h2>
+        <app-classes-owl [classes]="d.classes" />
+        <p class="uri">
+          <span class="muted">Individu de l'ABox</span>
+          <code class="mono">{{ d.uri }}</code>
+        </p>
+      </section>
+
+      <section class="panneau" aria-labelledby="ver-titre">
+        <h2 id="ver-titre">Vérifier un lien</h2>
+        <div class="champ">
+          <label for="det-autre">Avec</label>
+          <app-personne-select inputId="det-autre" [formControl]="autre" [exclure]="d.id" />
+        </div>
+        <button class="btn" type="button" [disabled]="autre.value == null" (click)="verifierAvec()">
+          Vérifier le lien
+        </button>
+      </section>
+
+      <section class="panneau zone-danger" aria-labelledby="sup-titre">
+        <h2 id="sup-titre">Supprimer la fiche</h2>
+        <p class="muted">Supprime aussi ses liens de filiation, de beau-parenté et ses mariages.</p>
+        @if (confirmerSuppression()) {
+          <div class="actions">
+            <button class="btn danger" type="button" (click)="supprimer()">Supprimer définitivement</button>
+            <button class="btn secondaire" type="button" (click)="confirmerSuppression.set(false)">Annuler</button>
+          </div>
+        } @else {
+          <button class="btn danger" type="button" (click)="confirmerSuppression.set(true)">
+            Supprimer {{ d.prenom }} {{ d.nom }}
+          </button>
+        }
+      </section>
+    </div>
+  </div>
+} @else {
+  <p class="chargement">Chargement de la fiche…</p>
+}

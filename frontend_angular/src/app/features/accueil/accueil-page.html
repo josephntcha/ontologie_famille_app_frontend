@@ -1,0 +1,98 @@
+<section class="question">
+  <h1>Ces deux personnes peuvent-elles se marier&nbsp;?</h1>
+  <p class="chapo">
+    Le registre cherche l'ancêtre commun le plus proche, calcule le degré de parenté et le lien d'alliance, puis
+    applique les articles 122, 123, 125 et 143 de la loi n° 2002-07 portant Code des personnes et de la famille.
+  </p>
+
+  <form class="duo" (ngSubmit)="verifier()">
+    <div class="champ">
+      <label for="acc-p1">Première personne</label>
+      <app-personne-select inputId="acc-p1" [formControl]="p1" [exclure]="p2.value" />
+    </div>
+    <div class="champ">
+      <label for="acc-p2">Seconde personne</label>
+      <app-personne-select inputId="acc-p2" [formControl]="p2" [exclure]="p1.value" />
+    </div>
+    <button class="btn" type="submit" [disabled]="p1.value == null || p2.value == null">Vérifier le lien</button>
+  </form>
+
+  @if (store.personnes().length === 0 && !store.chargement()) {
+    <p class="alerte info">
+      Le registre est vide. <a routerLink="/personnes">Ajoutez des personnes</a>, ou démarrez le backend avec le profil
+      <code>demo</code> pour charger une famille d'exemple.
+    </p>
+  }
+</section>
+
+<section class="etat" aria-label="État du registre">
+  <dl class="chiffres">
+    <div>
+      <dt>Personnes</dt>
+      <dd>{{ store.personnes().length }}</dd>
+    </div>
+    <div>
+      <dt>Liens de filiation</dt>
+      <dd>{{ stats()?.filiations ?? '–' }}</dd>
+    </div>
+    <div>
+      <dt>Liens beau-parent</dt>
+      <dd>{{ stats()?.beaux ?? '–' }}</dd>
+    </div>
+    <div>
+      <dt>Mariages</dt>
+      <dd>
+        {{ stats()?.mariages ?? '–' }}
+        @if (stats(); as s) {
+          <small>{{ s.enCours }} en cours</small>
+        }
+      </dd>
+    </div>
+  </dl>
+
+  <div class="constats">
+    @if (coherence(); as c) {
+      @if (c.coherente) {
+        <p><span class="etiquette vert">Cohérente</span> {{ c.raisonneur }} ne trouve aucune contradiction entre l'ontologie et les données saisies.</p>
+      } @else {
+        <p>
+          <span class="etiquette rouge">Incohérente</span> {{ c.raisonneur }} signale une contradiction.
+          <a routerLink="/ontologie">Voir le détail</a>
+        </p>
+      }
+    }
+    @if (doublons().length > 0) {
+      <p>
+        <span class="etiquette ambre">{{ doublons().length }} doublon(s) probable(s)</span>
+        Même nom et même date de naissance : une personne saisie deux fois fausse la détection.
+        <a routerLink="/personnes">Les examiner</a>
+      </p>
+    }
+  </div>
+</section>
+
+<section class="etapes" aria-labelledby="etapes-titre">
+  <h2 id="etapes-titre">Constituer un dossier</h2>
+  <ol>
+    <li>
+      <a routerLink="/personnes">Enregistrer les personnes</a>
+      <p>Nom, prénom, sexe et date de naissance. Chaque personne devient un individu de l'ABox.</p>
+    </li>
+    <li>
+      <a routerLink="/liens">Déclarer les liens</a>
+      <p>Filiations (parentDe), beaux-parents (beauParentDe) et mariages, en cours ou dissous.</p>
+    </li>
+    <li>
+      <a routerLink="/verification">Lancer la vérification</a>
+      <p>Lien de sang, alliance, complétude de l'arbre et verdict motivé article par article.</p>
+    </li>
+    <li>
+      <a routerLink="/arbre">Consulter l'arbre</a>
+      <p>Le chemin par l'ancêtre commun est surligné ; chaque nœud affiche les classes déduites par HermiT.</p>
+    </li>
+  </ol>
+  <p class="muted note">
+    Pour détecter tout empêchement jusqu'au 3e degré, il suffit de connaître les parents et les quatre grands-parents
+    de chaque personne, ainsi que leurs conjoints.
+  </p>
+</section>

@@ -1,0 +1,108 @@
+<header class="page-tete">
+  <div>
+    <h1>Ontologie</h1>
+    <p class="chapo">
+      La TBox (famille.owl) définit le vocabulaire : classes et propriétés. L'ABox regroupe les personnes et les liens
+      saisis. HermiT raisonne sur les deux à chaque requête pour classer les individus et vérifier la cohérence.
+    </p>
+  </div>
+</header>
+
+<div class="page">
+  @if (erreur(); as e) {
+    <div class="alerte erreur" role="alert">{{ e.message }}</div>
+  }
+
+  <section class="coherence panneau" [attr.data-etat]="coherence()?.coherente === false ? 'ko' : coherence() ? 'ok' : ''" aria-labelledby="coh-titre">
+    <div>
+      <h2 id="coh-titre">
+        @if (coherence(); as c) {
+          {{ c.coherente ? 'TBox et ABox cohérentes' : 'Données incohérentes' }}
+        } @else {
+          Cohérence en cours de calcul…
+        }
+      </h2>
+      @if (coherence(); as c) {
+        @if (c.coherente) {
+          <p>{{ c.raisonneur }} ne trouve aucune contradiction entre les axiomes de l'ontologie et les données saisies.</p>
+        } @else {
+          <p>{{ c.raisonneur }} signale une contradiction : certaines assertions de l'ABox violent un axiome de la TBox.</p>
+        }
+        @if (c.classes_insatisfiables.length) {
+          <p class="insat">
+            Classes insatisfiables :
+            @for (k of c.classes_insatisfiables; track k) {
+              <code>{{ k }}</code>
+            }
+          </p>
+        }
+      }
+    </div>
+    <button class="btn secondaire" type="button" (click)="verifierCoherence()" [disabled]="verification()">
+      {{ verification() ? 'Raisonnement…' : 'Relancer HermiT' }}
+    </button>
+  </section>
+
+  @if (ontologie(); as o) {
+    <section class="panneau" aria-labelledby="ns-titre">
+      <div class="ns">
+        <h2 id="ns-titre">Espace de noms <span class="muted">(préfixe f:)</span></h2>
+        <div class="ns-ligne">
+          <code class="mono">{{ o.namespace }}</code>
+          <button class="lien-discret" type="button" (click)="copierNamespace()">Copier</button>
+        </div>
+      </div>
+
+      <div class="signature">
+        <div class="bloc classes">
+          <div class="bloc-tete">
+            <h3>Classes <span class="compte">{{ o.classes.length }}</span></h3>
+            <input type="search" placeholder="Filtrer" aria-label="Filtrer les classes" [value]="filtre()" (input)="filtre.set($any($event.target).value)" />
+          </div>
+          <ul class="liste-classes">
+            @for (c of classesFiltrees(); track c) {
+              <li class="mono" [title]="lisible(c)">{{ c }}</li>
+            } @empty {
+              <li class="muted">Aucune classe ne correspond.</li>
+            }
+          </ul>
+        </div>
+        <div class="bloc">
+          <h3>Propriétés objet <span class="compte">{{ o.proprietes_objet.length }}</span></h3>
+          <ul class="liste-props">
+            @for (p of o.proprietes_objet; track p) {
+              <li class="mono">{{ p }}</li>
+            }
+          </ul>
+        </div>
+        <div class="bloc">
+          <h3>Propriétés de données <span class="compte">{{ o.proprietes_donnees.length }}</span></h3>
+          <ul class="liste-props">
+            @for (p of o.proprietes_donnees; track p) {
+              <li class="mono">{{ p }}</li>
+            }
+          </ul>
+        </div>
+      </div>
+    </section>
+  } @else if (!erreur()) {
+    <p class="chargement">Lecture de la TBox…</p>
+  }
+
+  <section class="panneau" aria-labelledby="ttl-titre">
+    <div class="ttl-tete">
+      <div>
+        <h2 id="ttl-titre">Export de l'ABox en Turtle</h2>
+        <p class="muted">
+          Assertions saisies uniquement, sans les inférences : personnes, parentDe, beauParentDe, frereDe et soeurDe
+          déduits par l'application, mariages. Le fichier se relit dans Protégé avec famille.owl.
+        </p>
+      </div>
+      <button class="btn" type="button" (click)="telechargerTurtle()">Télécharger abox-famille.ttl</button>
+    </div>
+    @if (turtleStats(); as s) {
+      <p class="ttl-stats">{{ s.personnes }} personnes, {{ s.mariages }} mariages, {{ s.lignes }} lignes.</p>
+      <pre class="turtle" tabindex="0" aria-label="Aperçu du fichier Turtle">{{ turtle() }}</pre>
+    }
+  </section>
+</div>
